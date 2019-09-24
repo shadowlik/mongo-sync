@@ -161,7 +161,44 @@ function close_tunnel {
     ssh -S db-sync-socket -O exit $TUNNEL_CREDENTIALS 2> /dev/null
 }
 
+# All databases
+function pull_full {
+    banner
+    if [ "$1" == false ] ; then
+        get_confirmation 'pull'
+    fi
+    load_configs
 
+    if [ "$tunnel_on" == true ] ; then
+        open_tunnel
+        remote_host_url="localhost"
+        remote_host_port=$TUNNEL_PORT
+    fi
+
+    echo "Dumping Remote DB to $TMPDIR... "
+    mongodump \
+        -h "$remote_host_url":"$remote_host_port" \
+        $REMOTE_CREDENTIALS \
+        -o "$TMPDIR" > /dev/null
+    success_msg
+
+    echo "Overwriting Local DB with Dump... "
+    mongorestore \
+        --port "$local_host_port" \
+        $LOCAL_CREDENTIALS \
+        "$TMPDIR"/"$remote_db" \
+        --drop > /dev/null
+    success_msg
+
+    if [ "$tunnel_on" == true ] ; then
+        close_tunnel
+    fi
+
+    cleanup
+    done_msg
+}
+
+# Database on yml
 function pull {
     banner
     if [ "$1" == false ] ; then
@@ -200,6 +237,43 @@ function pull {
     done_msg
 }
 
+# All databases
+function push_full {
+    banner
+    if [ "$1" == false ] ; then
+        get_confirmation 'push'
+    fi
+    load_configs
+
+    if [ "$tunnel_on" == true ] ; then
+        open_tunnel
+        remote_host_url="localhost"
+        remote_host_port=$TUNNEL_PORT
+    fi
+
+    echo "Dumping Local DB to $TMPDIR... "
+    mongodump \
+        --port "$local_host_port" \
+        $LOCAL_CREDENTIALS \
+        -o "$TMPDIR" > /dev/null
+    success_msg
+
+    echo "Overwriting Remote DB with Dump... "
+    mongorestore \
+        -h "$remote_host_url":"$remote_host_port" \
+        $REMOTE_CREDENTIALS \
+        "$TMPDIR"/"$local_db" --drop > /dev/null
+    success_msg
+
+    if [ "$tunnel_on" == true ] ; then
+        close_tunnel
+    fi
+
+    cleanup
+    done_msg
+}
+
+# Database on yml
 function push {
     banner
     if [ "$1" == false ] ; then
