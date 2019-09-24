@@ -342,8 +342,12 @@ else
 
     if [[ "$action" == 'push' ]] ; then
         push $skip
+    elif [[ "$action" == 'push_full' ]] ; then
+        push_full $skip
     elif [[ "$action" == 'pull' ]] ; then
         pull $skip
+    elif [[ "$action" == 'pull_full' ]] ; then
+        pull_full $skip
     else
         usage_error "unrecognized command \"$action\""
     fi
